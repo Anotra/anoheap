@@ -62,6 +62,7 @@ timers_run(struct timers *t) {
   while ((ev.id = anoheap_peek_key(t->h, &ev.trigger))) {
     if (ev.trigger > now) break;
     uint64_t trigger = ev.trigger;
+    ev.now = now;
     (ev.timers = t)->active.id = ev.id;
     anoheap_get_val(t->h, ev.id, &ev.timer);
     if (ev.timer.cb) {

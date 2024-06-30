@@ -30,6 +30,7 @@ struct timer_ev {
   struct timers *timers;
   timer_id id;
   uint64_t trigger;
+  uint64_t now;
   struct timer timer;
 };
 
