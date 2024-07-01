@@ -6,6 +6,10 @@
 #include <string.h>
 #include <time.h>
 
+#if defined HAVE_GETTIMEOFDAY
+  #include <sys/time.h>
+#endif
+
 #include "anoheap.h"
 
 #include "timers.h"
@@ -23,8 +27,24 @@ struct timers {
 static uint64_t
 _time_in_millis(void) {
   struct timespec ts;
+#if defined HAVE_CLOCK_GETTIME
+  #if defined CLOCK_REALTIME_COURSE
+    clock_gettime(CLOCK_REALTIME_COURSE, &ts);
+  #else
+    clock_gettime(CLOCK_REALTIME, &ts);
+  #endif
+#elif defined HAVE_TIMESPEC_GET
   timespec_get(&ts, TIME_UTC);
-  return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+#elif defined HAVE_GETTIMEOFDAY
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  ts.tv_sec = tv.tv_sec;
+  ts.tv_nsec = (long)tv.tv_usec * 1000;
+#else
+  ts.tv_sec = time(NULL);
+  ts.tv_nsec = 0;
+#endif
+  return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
 struct timers *

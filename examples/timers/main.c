@@ -10,8 +10,8 @@
 
 static void
 _cb(struct timer_ev *ev) {
-  printf("tick[id=%u] %"PRIu64" %"PRIu64" %s\n", ev->id,
-         ev->trigger, ev->timer.interval, ev->timer.data);
+  printf("tick[id=%u] trigger %"PRIu64"ms ago. interval=%"PRIu64". data = %s\n", 
+         ev->id, ev->now - ev->trigger, ev->timer.interval, ev->timer.data);
   if (ev->timer.interval) ev->timer.interval--;
   if (0 == ev->timer.interval) timers_delete(ev->timers, ev->id);
 }
