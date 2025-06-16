@@ -1,20 +1,17 @@
 cmake_minimum_required(VERSION 3.13)
 
-enable_language(C)
-
 include(CheckSymbolExists)
-
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(BUILD_EXAMPLES "build examples" ON)
+
+
+
+option(BUILD_EXAMPLES "build examples" OFF)
 option(BUILD_TESTS "enable testing" OFF)
 option(SHARED "build shared library(off for static library)" ON)
 
-check_symbol_exists(timespec_get time.h HAVE_TIMESPEC_GET)
-check_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
-check_symbol_exists(gettimeofday sys/time.h HAVE_GETTIMEOFDAY)
-
 project(anoheap VERSION 1.0.0 LANGUAGES C)
+check_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
 if (SHARED)
   add_library(${PROJECT_NAME} SHARED)
 else()

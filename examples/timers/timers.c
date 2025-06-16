@@ -6,10 +6,6 @@
 #include <string.h>
 #include <time.h>
 
-#if defined HAVE_GETTIMEOFDAY
-  #include <sys/time.h>
-#endif
-
 #include "anoheap.h"
 
 #include "timers.h"
@@ -25,26 +21,14 @@ struct timers {
 };
 
 static uint64_t
-_time_in_millis(void) {
+_monotonic_ms(void) {
+#ifdef HAVE_CLOCK_GETTIME
   struct timespec ts;
-#if defined HAVE_CLOCK_GETTIME
-  #if defined CLOCK_REALTIME_COURSE
-    clock_gettime(CLOCK_REALTIME_COURSE, &ts);
-  #else
-    clock_gettime(CLOCK_REALTIME, &ts);
-  #endif
-#elif defined HAVE_TIMESPEC_GET
-  timespec_get(&ts, TIME_UTC);
-#elif defined HAVE_GETTIMEOFDAY
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  ts.tv_sec = tv.tv_sec;
-  ts.tv_nsec = (long)tv.tv_usec * 1000;
-#else
-  ts.tv_sec = time(NULL);
-  ts.tv_nsec = 0;
-#endif
+  clock_gettime(CLOCK_MONOTONIC, &ts);
   return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+#else
+  #error no monotonic clock found
+#endif
 }
 
 struct timers *
@@ -78,7 +62,7 @@ timers_inactive(struct timers *t) {
 size_t
 timers_run(struct timers *t) {
   struct timer_ev ev = { 0 };
-  uint64_t now = _time_in_millis();
+  uint64_t now = _monotonic_ms();
   while ((ev.id = anoheap_peek_key(t->h, &ev.trigger))) {
     if (ev.trigger > now) break;
     uint64_t trigger = ev.trigger;
@@ -108,7 +92,7 @@ timers_run(struct timers *t) {
 
 uint64_t
 timers_next(struct timers *t, uint64_t default_value) {
-  uint64_t trigger, now = _time_in_millis();
+  uint64_t trigger, now = _monotonic_ms();
   return anoheap_peek_key(t->h, &trigger)
     ? trigger <= now ? 0 : trigger - now
     : default_value;
@@ -140,7 +124,7 @@ timers_start(struct timers *t, timer_id id,
   struct timer *timer = anoheap_get_val_direct(t->h, id);
   if (!timer) return false;
   timer->interval = interval;
-  uint64_t trigger = _time_in_millis() + delay;
+  uint64_t trigger = _monotonic_ms() + delay;
   anoheap_update_key(t->h, id, &trigger);
   return anoheap_enable(t->h, id);
 }
